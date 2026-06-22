@@ -17,24 +17,21 @@ Thumbs.db
 *.key
 secrets/
 
+# n8n data (workflows, credentials, execution history — back this up separately)
+n8n_data/
+
+# Cloudflare Tunnel credentials (stored per-user; never commit)
+.cloudflared/*.json
+.cloudflared/config.yml
+
 # Logs
 *.log
 logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # Build artifacts
 dist/
 build/
 out/
-*.egg-info/
-__pycache__/
-*.pyc
-*.pyo
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
 
 # Dependencies
 node_modules/
@@ -43,10 +40,16 @@ vendor/
 .venv/
 venv/
 
-# Coverage
+# Test artifacts
 coverage/
 .coverage
 htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+*.pyo
 
 # Misc
 .cache/

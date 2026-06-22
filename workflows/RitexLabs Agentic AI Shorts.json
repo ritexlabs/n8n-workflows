@@ -1,0 +1,806 @@
+{
+  "name": "RitexLabs Agentic AI Shorts - Drive Storage",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "arjun-dev-manual",
+        "options": {}
+      },
+      "name": "Manual Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        1040
+      ],
+      "id": "095dd8b1-bcfd-4b8b-8d26-bf53b6a55f48",
+      "webhookId": "c69da857-d9aa-4f6e-8b21-f0d0ca5652d2"
+    },
+    {
+      "parameters": {
+        "mode": "passThrough",
+        "options": {}
+      },
+      "name": "Merge Trigger",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        928
+      ],
+      "id": "8e38066d-8eb9-4469-9ab2-d01f8fe78b82",
+      "alwaysOutputData": true,
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/speech",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $vars.OPEN_AI_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini-tts\",\n  \"voice\": \"ash\",\n  \"input\": \"{{ $json.script }}\",\n  \"speed\": 1.25\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "name": "Generate Voice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2368,
+        928
+      ],
+      "id": "166a6d99-91e9-482e-b433-97e87dcd9728"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.heygen.com/v2/video/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "={{ $vars.HEYGEN_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"video_inputs\": [\n    {\n      \"character\": {\n        \"type\": \"avatar\",\n        \"avatar_id\": \"{{ [$vars.AVATAR_ID_GYANIBABA_1, $vars.AVATAR_ID_GYANIBABA_2, $vars.AVATAR_ID_GYANIBABA_3][Math.floor(Math.random() * 3)] }}\"\n      },\n      \"voice\": {\n        \"type\": \"audio\",\n        \"audio_url\": \"{{ $json.audio_url }}\"\n      }\n    }\n  ],\n  \"dimension\": {\n    \"width\": 1080,\n    \"height\": 1920\n  }\n} ",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "name": "Generate Avatar Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        3008,
+        928
+      ],
+      "id": "7b38e41a-f23e-41e3-8bcd-3a548ada3d53"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.data.video_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "={{ $vars.HEYGEN_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "name": "Download Final Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2240,
+        1248
+      ],
+      "id": "70effbeb-c1fe-49ac-be2d-ddc8440f61da"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.video_url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-Key",
+              "value": "={{ $vars.HEYGEN_API_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1824,
+        1344
+      ],
+      "id": "22b5de1b-f412-4867-836f-3b09860c57d5",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c420aa74-c0ee-402f-9872-990e065a07f0",
+              "leftValue": "={{ $json.body.data.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2032,
+        1344
+      ],
+      "id": "3dba1c27-fa20-4442-8d4e-c4b4f4b03c73",
+      "name": "If",
+      "alwaysOutputData": false,
+      "retryOnFail": false,
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2224,
+        1472
+      ],
+      "id": "213d7d57-5971-4fb0-b166-22396c824009",
+      "name": "Wait",
+      "webhookId": "edd7cf4a-dd45-4872-96ed-405a6b35e607",
+      "alwaysOutputData": false,
+      "notesInFlow": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $vars.OPEN_AI_KEY }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"temperature\": 0.8,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"आप एक AI कंटेंट स्ट्रैटेजिस्ट और हिंदी मोटिवेशनल यूट्यूब शॉर्ट्स एक्सपर्ट हैं।\\n\\nकाम करने का तरीका:\\n1. पहले दिए गए आइडिया का सबसे शक्तिशाली भावनात्मक एंगल सोचें।\\n2. दर्शकों को झटका देने वाला hook तय करें।\\n3. 60 सेकंड का स्ट्रक्चर्ड स्क्रिप्ट बनाएं जिसमें:\\n   - Hook (पहले 3-5 सेकंड)\\n   - Problem\\n   - Emotional Build-up\\n   - Powerful Message\\n   - Strong CTA\\n\\nनियम:\\n- Script 120–150 शब्दों की हो\\n- भाषा प्रभावशाली शुद्ध हिंदी हो\\n- वायरल यूट्यूब शॉर्ट्स स्टाइल हो\\n- कोई explanation नहीं\\n- केवल valid JSON return करें\\n\\nJSON Structure strictly follow करें:\\n{\\n  \\\"strategy\\\": \\\"\\\",\\n  \\\"emotion\\\": \\\"\\\",\\n  \\\"hook\\\": \\\"\\\",\\n  \\\"script\\\": \\\"\\\",\\n  \\\"cta\\\": \\\"\\\",\\n  \\\"title\\\": \\\"\\\",\\n  \\\"hashtags\\\": \\\"\\\",\\n  \\\"thumbnail_text\\\": \\\"\\\"\\n}\\n\\nReturn only valid JSON. Do not include any extra text.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Give trending motivationsl topic right now\"\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "name": "Generate Script",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1936,
+        928
+      ],
+      "id": "cb43b23e-169c-4456-8a59-6a2b4a828e78"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "ai-short-audio",
+        "fileName": "=ai-voice-{{ $('Script Output').item.json.fileidentifier }}.mp3",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        2608,
+        928
+      ],
+      "id": "d21c6b47-9848-4e4b-b337-77d3335a7e2d",
+      "name": "Upload a file",
+      "credentials": {
+        "s3": {
+          "id": "wTNtd7dt9Y85lFbR",
+          "name": "S3 account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "80ff4204-e3ec-4620-a841-b82ab6fbb4ae",
+              "name": "script",
+              "value": "={{ JSON.parse($json.body.choices[0].message.content).script }}",
+              "type": "string"
+            },
+            {
+              "id": "a6f20573-909a-4c70-9b80-7a2d54bcedab",
+              "name": "hook",
+              "value": "={{ JSON.parse($json.body.choices[0].message.content).hook }}",
+              "type": "string"
+            },
+            {
+              "id": "af7399d0-8468-47cc-b062-30c6871ba0cc",
+              "name": "Strategy",
+              "value": "={{ JSON.parse($json.body.choices[0].message.content).strategy }}",
+              "type": "string"
+            },
+            {
+              "id": "42b0ceff-4a77-4373-8abf-989d06aeb100",
+              "name": "emotion",
+              "value": "={{ JSON.parse($json.body.choices[0].message.content).emotion }}",
+              "type": "string"
+            },
+            {
+              "id": "4dadab0a-9a86-4b6e-ba41-fe17766392e0",
+              "name": "fileidentifier",
+              "value": "={{$now.format('yyyyMMddss')}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2144,
+        928
+      ],
+      "id": "7fa3b3f4-833d-4b10-9581-fce1abd4bb45",
+      "name": "Script Output"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1066521-ef99-4c4d-b2b9-9c0e46cc8653",
+              "name": "audio_url",
+              "value": "={{ $vars.CLOUD_FLARE_STORAGE }}/ai-voice-{{ $('Script Output').item.json.fileidentifier }}.mp3",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2816,
+        928
+      ],
+      "id": "3ec9f99e-cb8b-4b23-8d09-a35bdf25cd58",
+      "name": "Audio URL"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "66dd31c6-10fe-47c0-ad19-b4d70b1d64a6",
+              "name": "video_id",
+              "value": "={{ $json.body.data.video_id }}",
+              "type": "string"
+            },
+            {
+              "id": "4f81eaed-4841-442b-9630-9a1e76c1df07",
+              "name": "video_url",
+              "value": "=https://api.heygen.com/v1/video_status.get?video_id={{ $json.body.data.video_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3216,
+        928
+      ],
+      "id": "e9b7acfc-19f2-428f-a7d9-f3d82ba95538",
+      "name": "Video URL"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ $('Script Output').item.json.hook }}",
+        "regionCode": "IN",
+        "categoryId": "=22",
+        "options": {
+          "privacyStatus": "private"
+        }
+      },
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        2448,
+        1248
+      ],
+      "id": "72dc8d2c-c691-4837-8936-e337ab71016e",
+      "name": "Upload a video",
+      "alwaysOutputData": true,
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "twl0jeB9i8LqOAdV",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3238ac3a-2f16-4c36-997e-2563bc31057a",
+              "name": "video_id",
+              "value": "={{ $json.body.data.id }}",
+              "type": "string"
+            },
+            {
+              "id": "4095a0d4-1b85-4175-9890-9b10a252ea4d",
+              "name": "video_url",
+              "value": "=https://api.heygen.com/v1/video_status.get?video_id={{ $json.body.data.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2432,
+        1472
+      ],
+      "id": "54144836-699e-4648-93d5-775021b9bb4a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        832
+      ],
+      "id": "51c7fc94-92ba-4654-9f16-49ec3fc108a6",
+      "name": "Telegram Trigger",
+      "webhookId": "8afac557-0b7b-4812-a529-13b031577e10",
+      "credentials": {
+        "telegramApi": {
+          "id": "O8zzhWg9z0vJVjYt",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "893147d4-2ac0-452a-a6fd-d1bd588e9963",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/start",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        1136
+      ],
+      "id": "b82b7e0a-d79d-4e3c-9ee9-035767980f09",
+      "name": "If1",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Welcome! Your workflow has started ✅",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1504,
+        848
+      ],
+      "id": "75c91cc2-1f17-48fa-a9c8-5b58ad7e82a9",
+      "name": "Send a text message",
+      "webhookId": "704a317a-bfd0-4ca7-9f01-427fee03c2b5",
+      "credentials": {
+        "telegramApi": {
+          "id": "O8zzhWg9z0vJVjYt",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "To start workflow send \"/start\" message",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1488,
+        1232
+      ],
+      "id": "80a1fbbf-6733-49ea-bd66-398b21c5fc11",
+      "name": "Send a text message1",
+      "webhookId": "f1e204e0-4858-43a4-8476-71cbaeb280ad",
+      "credentials": {
+        "telegramApi": {
+          "id": "O8zzhWg9z0vJVjYt",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Your workflow has completed successfully ✅",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2656,
+        1248
+      ],
+      "id": "4e95b470-2033-43af-9c70-4f2ea316b458",
+      "name": "Send a text message2",
+      "webhookId": "e5e4d348-487e-49c4-9646-12bb57e58d94",
+      "credentials": {
+        "telegramApi": {
+          "id": "O8zzhWg9z0vJVjYt",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Webhook": {
+      "main": [
+        [
+          {
+            "node": "Merge Trigger",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Voice": {
+      "main": [
+        [
+          {
+            "node": "Upload a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Avatar Video": {
+      "main": [
+        [
+          {
+            "node": "Video URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Final Video": {
+      "main": [
+        [
+          {
+            "node": "Upload a video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Download Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Script": {
+      "main": [
+        [
+          {
+            "node": "Script Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file": {
+      "main": [
+        [
+          {
+            "node": "Audio URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Script Output": {
+      "main": [
+        [
+          {
+            "node": "Generate Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio URL": {
+      "main": [
+        [
+          {
+            "node": "Generate Avatar Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video URL": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a video": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Merge Trigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "51781c49-09b7-4919-b29a-03e000ecc0bd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f6254591685c832f9e9c8eb200892da83140b6c818048228c02e71c0688cc977"
+  },
+  "id": "oFiO3pOChClF2I4z",
+  "tags": []
+}

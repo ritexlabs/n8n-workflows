@@ -11,34 +11,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ------------------------------------------------------------------
-  # Replace the steps in this job with your language-specific commands.
-  # Examples:
-  #   Node.js  — npm ci && npm run lint && npm run type-check && npm test
-  #   Python   — pip install -r requirements.txt && ruff check . && pytest
-  #   Go       — go vet ./... && go test ./...
-  # ------------------------------------------------------------------
-  build-and-test:
-    name: Build & Test
+  validate:
+    name: Validate configuration
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up environment
-        # TODO: replace with your language setup step
-        # e.g. actions/setup-node@v4, actions/setup-python@v5, actions/setup-go@v5
-        run: echo "Add your environment setup here"
+      - name: Validate docker-compose.yml
+        run: |
+          # Provide a dummy token so the required variable check passes during validation
+          export N8N_RUNNERS_AUTH_TOKEN=ci-placeholder
+          docker compose config --quiet
 
-      - name: Install dependencies
-        run: echo "Add your install command here"
+      - name: Check .env.sample exists and has required keys
+        run: |
+          required_keys=(
+            "N8N_HOST"
+            "N8N_PORT"
+            "N8N_PROTOCOL"
+            "N8N_SECURE_COOKIE"
+            "N8N_RUNNERS_AUTH_TOKEN"
+            "N8N_DATA_PATH"
+            "CLOUDFLARE_TUNNEL_NAME"
+            "CLOUDFLARE_HOSTNAME"
+          )
+          missing=0
+          for key in "${required_keys[@]}"; do
+            if ! grep -q "^${key}=" .env.sample; then
+              echo "Missing key in .env.sample: $key"
+              missing=1
+            fi
+          done
+          if [ "$missing" -eq 1 ]; then
+            exit 1
+          fi
+          echo "All required keys present in .env.sample"
 
-      - name: Lint
-        run: echo "Add your lint command here"
+      - name: Verify shell scripts are executable
+        run: |
+          for script in scripts/*.sh; do
+            if [ ! -x "$script" ]; then
+              echo "Not executable: $script"
+              exit 1
+            fi
+          done
+          echo "All shell scripts are executable"
 
-      - name: Test
-        run: echo "Add your test command here"
-
-      - name: Build
-        run: echo "Add your build command here"
+      - name: Lint shell scripts (shellcheck)
+        run: |
+          sudo apt-get install -y shellcheck
+          shellcheck scripts/*.sh

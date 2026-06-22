@@ -4,34 +4,54 @@ This file gives Claude Code context about this project.
 
 ## Project Overview
 
-<!-- Replace with a one-paragraph description of what this project does and why. -->
+Self-hosted n8n workflow automation running in Docker, with optional Cloudflare Tunnel for public HTTPS access. No public IP or port forwarding required. Supports macOS and Windows.
 
 ## Repository Structure
 
 ```
-.github/
-  workflows/          # CI/CD pipelines
-  ISSUE_TEMPLATE/     # Bug and feature templates
-  CODEOWNERS          # Auto-assign reviewers
-  SECURITY.md         # Vulnerability reporting
-  CONTRIBUTING.md     # Contribution guide
-  copilot-instructions.md
+docker-compose.yml          # n8n + runners services (reads from .env)
+n8n-task-runners.json       # JS/Python runner config (mounted into runners container)
+.env.sample                 # Environment variable template — copy to .env
+scripts/
+  setup.sh                  # macOS: one-time install + Cloudflare config
+  start.sh                  # macOS: start n8n + tunnel
+  stop.sh                   # macOS: stop n8n + tunnel
+  cloudflare-tunnel.sh      # macOS: tunnel only (domain or random URL)
+  start.bat                 # Windows: start n8n + tunnel
+  stop.bat                  # Windows: stop n8n + tunnel
+  cloudflare-tunnel.bat     # Windows: tunnel only
 docs/
-  architecture.md     # System design
-  development.md      # Local setup guide
-  deployment.md       # Deploy process
-  api.md              # API reference
+  architecture.md           # Component diagram and data flow
+  development.md            # Setup guide and daily commands
+  cloudflare.md             # Cloudflare Tunnel detailed guide
+  deployment.md             # Backups, auto-start, migration
+.github/
+  workflows/ci.yml          # Validates docker-compose and shell scripts
 ```
 
 ## Development Commands
 
 ```bash
-# TODO: replace with actual project commands
-install:   <your install command>
-dev:       <your dev server command>
-test:      <your test command>
-lint:      <your lint command>
-build:     <your build command>
+# First-time setup (macOS)
+setup:     ./scripts/setup.sh
+
+# Start n8n + Cloudflare tunnel
+dev:       ./scripts/start.sh
+
+# Stop everything
+stop:      ./scripts/stop.sh
+
+# Cloudflare tunnel only
+tunnel:    ./scripts/cloudflare-tunnel.sh
+
+# View n8n logs
+logs:      docker compose logs -f n8n
+
+# Validate docker-compose and shell scripts
+lint:      shellcheck scripts/*.sh && docker compose config --quiet
+
+# Update n8n to latest image
+update:    docker compose pull && docker compose up -d
 ```
 
 ## Code Conventions
