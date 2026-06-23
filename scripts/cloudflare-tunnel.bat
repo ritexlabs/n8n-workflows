@@ -22,6 +22,23 @@ if exist ".env" (
 if not defined N8N_PORT set N8N_PORT=5678
 if not defined CLOUDFLARE_TUNNEL_NAME set CLOUDFLARE_TUNNEL_NAME=n8n-tunnel
 
+REM Resolve cloudflared — check PATH first, then common install locations
+set "CLOUDFLARED=cloudflared.exe"
+where cloudflared.exe >nul 2>&1
+if errorlevel 1 (
+    if exist "C:\Program Files (x86)\cloudflared\cloudflared.exe" (
+        set "CLOUDFLARED=C:\Program Files (x86)\cloudflared\cloudflared.exe"
+    ) else if exist "C:\Program Files\Cloudflare\cloudflared\cloudflared.exe" (
+        set "CLOUDFLARED=C:\Program Files\Cloudflare\cloudflared\cloudflared.exe"
+    ) else if exist "C:\Apps\cloudflared\cloudflared.exe" (
+        set "CLOUDFLARED=C:\Apps\cloudflared\cloudflared.exe"
+    ) else (
+        echo [!!] cloudflared.exe not found. Add it to PATH or install via winget.
+        cmd /k
+        exit /b 1
+    )
+)
+
 echo.
 if defined CLOUDFLARE_HOSTNAME (
     if not "!CLOUDFLARE_HOSTNAME!"=="" (
@@ -31,7 +48,7 @@ if defined CLOUDFLARE_HOSTNAME (
         echo  URL    : https://!CLOUDFLARE_HOSTNAME!
         echo ==========================================================
         echo.
-        cloudflared.exe tunnel run !CLOUDFLARE_TUNNEL_NAME!
+        "!CLOUDFLARED!" tunnel run !CLOUDFLARE_TUNNEL_NAME!
     ) else (
         goto random_url
     )
@@ -43,7 +60,7 @@ if defined CLOUDFLARE_HOSTNAME (
     echo  Cloudflare will print the assigned URL below.
     echo ==========================================================
     echo.
-    cloudflared.exe tunnel --url http://localhost:!N8N_PORT!
+    "!CLOUDFLARED!" tunnel --url http://localhost:!N8N_PORT!
 )
 
 cmd /k

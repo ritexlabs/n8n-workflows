@@ -14,6 +14,7 @@ n8n-task-runners.json       # JS/Python runner config (mounted into runners cont
 .env.sample                 # Environment variable template — copy to .env
 scripts/
   setup.sh                  # macOS: one-time install + Cloudflare config
+  setup.bat                 # Windows: one-time install + Cloudflare config
   start.sh                  # macOS: start n8n + tunnel
   stop.sh                   # macOS: stop n8n + tunnel
   cloudflare-tunnel.sh      # macOS: tunnel only (domain or random URL)
@@ -34,6 +35,9 @@ docs/
 ```bash
 # First-time setup (macOS)
 setup:     ./scripts/setup.sh
+
+# First-time setup (Windows)
+setup:     scripts\setup.bat
 
 # Start n8n + Cloudflare tunnel
 dev:       ./scripts/start.sh
