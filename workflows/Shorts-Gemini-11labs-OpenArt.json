@@ -1,0 +1,787 @@
+{
+  "name": "Shorts-Gemini-11labs-OpenArt",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "4c874466-d6f6-4fb9-a9cd-edd2837c3f51",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "speech",
+        "voice": {
+          "__rl": true,
+          "value": "7b9mYhmnp0y2qSH1FnBL",
+          "mode": "list",
+          "cachedResultName": "Bunty - Funny Best Friend"
+        },
+        "text": "={{ JSON.parse($node['Generate Script (Gemini)'].json.candidates[0].content.parts[0].text).script }}",
+        "additionalOptions": {},
+        "requestOptions": {}
+      },
+      "id": "642c2a52-9e4d-427f-9723-e9a33118a3d9",
+      "name": "ElevenLabs TTS",
+      "type": "@elevenlabs/n8n-nodes-elevenlabs.elevenLabs",
+      "typeVersion": 1,
+      "position": [
+        224,
+        512
+      ],
+      "credentials": {
+        "elevenLabsApi": {
+          "id": "aXax4H7KzOSPblHk",
+          "name": "ElevenLabs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "/files/voiceover.mp3",
+        "options": {}
+      },
+      "id": "323edae8-1153-409c-bcbb-9978c140cc6e",
+      "name": "Save Voiceover to Disk",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        448,
+        512
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://mcp.openart.ai/mcp",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "value": "openart_generate_video",
+          "mode": "list",
+          "cachedResultName": "openart_generate_video"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "model": "byte-plus-seedance-2-5",
+            "mode": "text2video",
+            "params": {
+              "prompt": "={{ $json.scene }}",
+              "videoCount": 1,
+              "duration": 10,
+              "aspectRatio": "9:16",
+              "resolution": "480p",
+              "generateAudio": false,
+              "seed": -1
+            }
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "model",
+              "displayName": "model",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "mode",
+              "displayName": "mode",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "params",
+              "displayName": "params",
+              "defaultMatch": false,
+              "required": true,
+              "display": true,
+              "type": "object",
+              "defaultValue": "{}",
+              "removed": false
+            },
+            {
+              "id": "projectId",
+              "displayName": "projectId",
+              "defaultMatch": false,
+              "required": false,
+              "display": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "ec993b76-511d-48f4-99a7-22cd70cc64c4",
+      "name": "Trigger OpenArt Video",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        656
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "hciOYAZ76et8Wrdi",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "id": "2feb1985-76ef-49df-8a37-73ba267aa44c",
+      "name": "Wait 30s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1088,
+        656
+      ],
+      "webhookId": "4d50eeb4-5d9c-4e76-9eb9-b742a7dae728"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://mcp.openart.ai/mcp",
+        "authentication": "mcpOAuth2Api",
+        "tool": {
+          "__rl": true,
+          "mode": "id",
+          "value": "openart_creation_wait"
+        },
+        "parameters": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "historyId": "={{ $node['Trigger OpenArt Video'].json.structuredContent.historyId }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "historyId",
+              "displayName": "historyId",
+              "type": "string",
+              "required": false,
+              "defaultMatch": false,
+              "display": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "bde0e698-16f3-4496-ace9-d680cc76212c",
+      "name": "Poll OpenArt Video Status",
+      "type": "@n8n/n8n-nodes-langchain.mcpClient",
+      "typeVersion": 1.1,
+      "position": [
+        1312,
+        656
+      ],
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "hciOYAZ76et8Wrdi",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.structuredContent.status }}",
+              "rightValue": "COMPLETED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2ed175db-17f5-4956-98a1-8e8f41db8245",
+      "name": "Is Render Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1536,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.structuredContent.resources[0].url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "51917c60-3504-4d7b-9710-d3586df135bd",
+      "name": "Download Rendered Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/files/video_clip_{{ $node['Split Scenes'].json.sceneIndex }}.mp4",
+        "options": {}
+      },
+      "id": "b0c8f1d0-941e-4dbe-bd01-69d1827729e5",
+      "name": "Save Video Clip to Disk",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "command": "ffmpeg -y -i /files/video_combined.mp4 -i /files/voiceover.mp3 -map 0:v:0 -map 1:a:0 -c:v libx264 -c:a aac -shortest /files/final_output.mp4"
+      },
+      "id": "90997bf0-09f6-478a-be20-a4534b600ec7",
+      "name": "Combine Video + Audio",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePalmApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [{\"parts\": [{\"text\": \"You are a documentary writer. Select a verified topic under Wonders of World/Universe/Sea/India/Places. Write a 30-second script (~80 words). Write the \\\"script\\\" field in natural spoken Hindi (Devanagari), suitable for voiceover narration — keep \\\"topic\\\", \\\"openart_prompts\\\", and the \\\"youtube\\\" fields in English. Also write \\\"openart_prompts\\\": an array of exactly 3 distinct cinematic English visual descriptions, one per ~10-second video segment, together telling a coherent visual story that follows the script's narrative (different angles, moments, or details of the topic — not repeats of the same shot). Return ONLY a JSON object: {\\\"topic\\\": \\\"Topic Name\\\", \\\"script\\\": \\\"हिंदी में Voiceover text\\\", \\\"openart_prompts\\\": [\\\"scene 1 description\\\", \\\"...\\\", \\\"scene 3 description\\\"], \\\"youtube\\\": {\\\"title\\\": \\\"Title\\\", \\\"description\\\": \\\"Description #shorts\\\", \\\"tags\\\": [\\\"wonders\\\"]}}}}\"}]}],\n  \"generationConfig\": {\"responseMimeType\": \"application/json\"}\n}",
+        "options": {}
+      },
+      "id": "0cf86767-eae5-4dfc-b70d-21ac5df13cdf",
+      "name": "Generate Script (Gemini)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        608
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "aprLxqbF5jUxabBq",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.candidates[0].content.parts[0].text;\nconst data = JSON.parse(raw);\nconst prompts = data.openart_prompts || [];\nreturn prompts.map((p, i) => ({\n  json: {\n    scene: p,\n    sceneIndex: i,\n    topic: data.topic,\n    script: data.script,\n    youtube: data.youtube,\n  },\n}));"
+      },
+      "id": "b2f8f311-9213-4c70-aa25-35e45be55afe",
+      "name": "Split Scenes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a8bea51b-3566-4d5e-b52a-fd44b1f5646b",
+      "name": "Loop Scenes",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        448,
+        704
+      ]
+    },
+    {
+      "parameters": {
+        "command": "rm -f /files/concat_list.txt; for i in $(seq 0 2); do echo \"file '/files/video_clip_$i.mp4'\" >> /files/concat_list.txt; done; cat /files/concat_list.txt"
+      },
+      "id": "4981dd5c-29d6-4d9f-870e-6cd69ee3d496",
+      "name": "Build Concat List",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        672,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "command": "ffmpeg -y -f concat -safe 0 -i /files/concat_list.txt -c copy /files/video_combined.mp4"
+      },
+      "id": "0fd98ae7-af9b-4621-b92b-94eda2df2022",
+      "name": "Concat Videos",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        896,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "vp1",
+              "leftValue": "={{ $node['Manual Trigger'].json.VIDEO_PROVIDER }}",
+              "rightValue": "openart",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "40733ceb-6347-421f-82b6-c53a2ee070b0",
+      "name": "Video Provider?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        672,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/flows/video",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "elevenLabsApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model_id\": \"bytedance-seedance-v2.5\",\n  \"prompt\": \"{{ $json.scene }}\",\n  \"aspect_ratio\": \"9:16\",\n  \"duration_secs\": 10,\n  \"resolution\": \"720p\",\n  \"generate_audio\": false\n}",
+        "options": {}
+      },
+      "id": "27b70e0e-2e62-4085-9e57-c137aba8e1bc",
+      "name": "Trigger ElevenLabs Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        912,
+        1008
+      ],
+      "credentials": {
+        "elevenLabsApi": {
+          "id": "aXax4H7KzOSPblHk",
+          "name": "ElevenLabs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "id": "0e039549-f698-43ea-9c43-e94d30e44a16",
+      "name": "Wait 30s (ElevenLabs)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1136,
+        1008
+      ],
+      "webhookId": "0762f7d8-9b8a-438a-b2ae-8d1949542cd2"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.elevenlabs.io/v1/flows/video/{{ $node['Trigger ElevenLabs Video'].json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "elevenLabsApi",
+        "options": {}
+      },
+      "id": "df8f8c6b-0fdb-490d-ba37-fa31b16193d4",
+      "name": "Poll ElevenLabs Video Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1360,
+        1008
+      ],
+      "credentials": {
+        "elevenLabsApi": {
+          "id": "aXax4H7KzOSPblHk",
+          "name": "ElevenLabs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "ec1",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "12732ee2-483a-4b6d-bbf1-c6918becb269",
+      "name": "Is ElevenLabs Render Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1584,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.content_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "b18a82fa-11b4-4578-a011-fead43243dfb",
+      "name": "Download ElevenLabs Video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1808,
+        1008
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate Script (Gemini)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ElevenLabs TTS": {
+      "main": [
+        [
+          {
+            "node": "Save Voiceover to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger OpenArt Video": {
+      "main": [
+        [
+          {
+            "node": "Wait 30s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30s": {
+      "main": [
+        [
+          {
+            "node": "Poll OpenArt Video Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll OpenArt Video Status": {
+      "main": [
+        [
+          {
+            "node": "Is Render Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Render Complete?": {
+      "main": [
+        [
+          {
+            "node": "Download Rendered Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 30s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Rendered Video": {
+      "main": [
+        [
+          {
+            "node": "Save Video Clip to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Script (Gemini)": {
+      "main": [
+        [
+          {
+            "node": "ElevenLabs TTS",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Scenes": {
+      "main": [
+        [
+          {
+            "node": "Loop Scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Scenes": {
+      "main": [
+        [
+          {
+            "node": "Build Concat List",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Video Provider?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Video Clip to Disk": {
+      "main": [
+        [
+          {
+            "node": "Loop Scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Concat List": {
+      "main": [
+        [
+          {
+            "node": "Concat Videos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Concat Videos": {
+      "main": [
+        [
+          {
+            "node": "Combine Video + Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video Provider?": {
+      "main": [
+        [
+          {
+            "node": "Trigger OpenArt Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Trigger ElevenLabs Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger ElevenLabs Video": {
+      "main": [
+        [
+          {
+            "node": "Wait 30s (ElevenLabs)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30s (ElevenLabs)": {
+      "main": [
+        [
+          {
+            "node": "Poll ElevenLabs Video Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll ElevenLabs Video Status": {
+      "main": [
+        [
+          {
+            "node": "Is ElevenLabs Render Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is ElevenLabs Render Complete?": {
+      "main": [
+        [
+          {
+            "node": "Download ElevenLabs Video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 30s (ElevenLabs)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download ElevenLabs Video": {
+      "main": [
+        [
+          {
+            "node": "Save Video Clip to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "147d25bf-c717-4bec-8bfe-27b34f892f8e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7a2c5bebf614e85bd940c0f2c59f3bfb8e6b508bddde029bf41d3d43f691a5ae"
+  },
+  "nodeGroups": [],
+  "id": "z4gkdwqIEBTT4uGK",
+  "tags": []
+}

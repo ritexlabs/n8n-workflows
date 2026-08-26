@@ -1,6 +1,7 @@
 services:
   n8n:
-    image: n8nio/n8n:latest
+    build: .
+    image: n8n-with-ffmpeg:latest
     restart: always
     security_opt:
       - no-new-privileges:true
@@ -41,6 +42,11 @@ services:
       # Explicitly allow reading and writing in the /files mounted container folder
       - N8N_RESTRICT_FILE_ACCESS_TO=/files
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+      # n8n excludes executeCommand + localFileTrigger by default; re-enabling
+      # executeCommand only (not the full clear) since it runs arbitrary shell
+      # commands in the container and can read every env var here, including
+      # N8N_RUNNERS_AUTH_TOKEN and N8N_SMTP_PASS — restrict access to trusted users.
+      - NODES_EXCLUDE=["n8n-nodes-base.localFileTrigger"]
     volumes:
       - ${N8N_DATA_PATH:-./n8n_data}:/home/node/.n8n
       # Nested under N8N_DATA_PATH so there's still one top-level directory to back
