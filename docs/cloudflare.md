@@ -162,17 +162,13 @@ CLOUDFLARE_HOSTNAME=n8n.yourdomain.com
 
 ### Part 9: Start n8n and the Tunnel
 
-**macOS**
+Same command on every platform (`python3` on macOS/Linux, `python` on Windows):
+
 ```bash
-docker compose down && docker compose up -d
-./scripts/start.sh
+python3 scripts/launch.py start
 ```
 
-**Windows**
-```cmd
-docker compose down && docker compose up -d
-scripts\start.bat
-```
+This starts n8n, the runners, and the Cloudflare Tunnel together, then tails n8n's logs.
 
 The tunnel logs should show:
 ```
@@ -199,14 +195,8 @@ Then open `https://n8n.yourdomain.com` in your browser — the n8n login screen 
 
 In `.env`, leave `CLOUDFLARE_HOSTNAME` empty, then:
 
-**macOS**
 ```bash
-./scripts/start.sh
-```
-
-**Windows**
-```cmd
-scripts\start.bat
+python3 scripts/launch.py start
 ```
 
 `cloudflared` prints the assigned URL:
@@ -232,7 +222,7 @@ The tunnel itself lives in your Cloudflare account and is not tied to a machine.
    - From: `~/.cloudflared/<TUNNEL-ID>.json`
    - To: `~/.cloudflared/<TUNNEL-ID>.json` on the new machine
 5. Copy `~/.cloudflared/config.yml` to the new machine as well.
-6. Run `./scripts/start.sh` — the tunnel will connect using the existing credentials.
+6. Run `python3 scripts/launch.py start` — the tunnel will connect using the existing credentials.
 
 > If you cannot copy the JSON file, delete the tunnel in Cloudflare, recreate it on the new machine (Part 5), delete the old CNAME in Cloudflare DNS, and re-run the route command (Part 7).
 
@@ -243,7 +233,7 @@ The tunnel itself lives in your Cloudflare account and is not tied to a machine.
 ### HTTP 530 — Cloudflare can't reach the tunnel
 
 Causes in order of likelihood:
-1. **`cloudflared` is not running** — run `./scripts/start.sh` or `cloudflared tunnel run ritexlabs-n8n`
+1. **`cloudflared` is not running** — run `python3 scripts/launch.py start` or `cloudflared tunnel run ritexlabs-n8n`
 2. **Stale DNS CNAME** — the CNAME points to an old/deleted tunnel. Fix:
    - Go to Cloudflare Dashboard → DNS → Records
    - Delete the CNAME for your subdomain

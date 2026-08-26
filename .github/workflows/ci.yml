@@ -11,6 +11,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  secret-scan:
+    name: Scan for secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+
   validate:
     name: Validate configuration
     runs-on: ubuntu-latest
@@ -30,6 +43,7 @@ jobs:
           required_keys=(
             "N8N_HOST"
             "N8N_PORT"
+            "N8N_BIND_ADDRESS"
             "N8N_PROTOCOL"
             "N8N_SECURE_COOKIE"
             "N8N_RUNNERS_AUTH_TOKEN"
@@ -49,17 +63,21 @@ jobs:
           fi
           echo "All required keys present in .env.sample"
 
-      - name: Verify shell scripts are executable
+      - name: Verify launch.py is executable
         run: |
-          for script in scripts/*.sh; do
-            if [ ! -x "$script" ]; then
-              echo "Not executable: $script"
-              exit 1
-            fi
-          done
-          echo "All shell scripts are executable"
+          if [ ! -x "scripts/launch.py" ]; then
+            echo "Not executable: scripts/launch.py"
+            exit 1
+          fi
+          echo "scripts/launch.py is executable"
 
-      - name: Lint shell scripts (shellcheck)
+      - name: Check launch.py syntax
+        run: python3 -m py_compile scripts/launch.py
+
+      - name: Verify no stray shell/batch scripts remain
         run: |
-          sudo apt-get install -y shellcheck
-          shellcheck scripts/*.sh
+          if compgen -G "scripts/*.sh" > /dev/null || compgen -G "scripts/*.bat" > /dev/null; then
+            echo "Found leftover .sh/.bat scripts — everything should live in scripts/launch.py"
+            exit 1
+          fi
+          echo "scripts/ contains only launch.py"

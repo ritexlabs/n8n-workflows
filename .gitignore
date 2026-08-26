@@ -18,7 +18,13 @@ CLAUDE.md
 .env.*.local
 *.pem
 *.key
+*.p12
 secrets/
+
+# Credential files people sometimes drop in for n8n import (Google service
+# accounts, OAuth client secrets, etc.) — never belong in the repo.
+*credentials*.json
+client_secret*.json
 
 # n8n data (workflows, credentials, execution history — back this up separately)
 n8n_data/

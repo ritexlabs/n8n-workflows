@@ -60,10 +60,12 @@ External Service  →  POST https://n8n.example.com/webhook/...
 
 | Port | Service | Note |
 |------|---------|------|
-| 5678 | n8n editor + webhook receiver | Exposed to host; Cloudflare tunnels to this |
+| 5678 | n8n editor + webhook receiver | Bound to `127.0.0.1` on the host by default (`N8N_BIND_ADDRESS` in `.env`); Cloudflare tunnels to this |
 | 5679 | n8n runner broker | Internal only — not exposed to host |
 | 5681 | JS runner health check | Internal only |
 | 5682 | Python runner health check | Internal only |
+
+n8n is reachable only via `localhost`/the loopback interface and the Cloudflare Tunnel — not from other devices on the LAN — unless `N8N_BIND_ADDRESS` is deliberately set to `0.0.0.0`.
 
 ## Data Persistence
 

@@ -2,8 +2,16 @@ services:
   n8n:
     image: n8nio/n8n:latest
     restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # Bound to the loopback interface by default so n8n is reachable only from this
+    # machine or through the Cloudflare Tunnel — never directly from the LAN or a
+    # forwarded port. Set N8N_BIND_ADDRESS=0.0.0.0 in .env only if you intentionally
+    # want it reachable from other devices on your network.
     ports:
-      - "${N8N_PORT:-5678}:5678"
+      - "${N8N_BIND_ADDRESS:-127.0.0.1}:${N8N_PORT:-5678}:5678"
     environment:
       - N8N_HOST=${N8N_HOST:-localhost}
       - N8N_PORT=5678
@@ -14,16 +22,33 @@ services:
       - N8N_RUNNERS_BROKER_PORT=${N8N_RUNNERS_BROKER_PORT:-5679}
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN:?N8N_RUNNERS_AUTH_TOKEN must be set in .env}
       - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE:-false}
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=true
+      - N8N_DIAGNOSTICS_ENABLED=false
       - NODE_ENV=production
       - WEBHOOK_URL=${WEBHOOK_URL:-}
       - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL:-}
       - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-UTC}
+      # SMTP — enables "forgot password" and invite emails. Inert (no email sent,
+      # no error) until N8N_SMTP_HOST is set in .env.
+      - N8N_EMAIL_MODE=${N8N_EMAIL_MODE:-smtp}
+      - N8N_SMTP_HOST=${N8N_SMTP_HOST:-}
+      - N8N_SMTP_PORT=${N8N_SMTP_PORT:-587}
+      - N8N_SMTP_SSL=${N8N_SMTP_SSL:-false}
+      - N8N_SMTP_STARTTLS=${N8N_SMTP_STARTTLS:-true}
+      - N8N_SMTP_USER=${N8N_SMTP_USER:-}
+      - N8N_SMTP_PASS=${N8N_SMTP_PASS:-}
+      - N8N_SMTP_SENDER=${N8N_SMTP_SENDER:-}
     volumes:
       - ${N8N_DATA_PATH:-./n8n_data}:/home/node/.n8n
 
   runners:
     image: n8nio/runners:latest
     container_name: n8n-runners
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
       - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN:?N8N_RUNNERS_AUTH_TOKEN must be set in .env}
       - N8N_RUNNERS_TASK_BROKER_URI=http://n8n:${N8N_RUNNERS_BROKER_PORT:-5679}

@@ -9,10 +9,14 @@ Before treating this setup as production-ready:
 - [ ] `N8N_RUNNERS_AUTH_TOKEN` is a strong random secret (32+ hex chars). Generate with: `openssl rand -hex 32`
 - [ ] `N8N_SECURE_COOKIE=true` — required when running over HTTPS.
 - [ ] `N8N_PROTOCOL=https` and `WEBHOOK_URL` point to your public domain.
+- [ ] `N8N_BIND_ADDRESS=127.0.0.1` (default) — don't set this to `0.0.0.0` unless you specifically want n8n reachable from other devices on the network.
+- [ ] `.env` is `chmod 600` and `n8n_data/` is `chmod 700` (done automatically by `launch.py setup`).
 - [ ] `n8n_data/` is backed up regularly, especially `n8n_data/encryption.key`.
 - [ ] Cloudflare SSL/TLS mode set to **Full** or **Full (Strict)**.
-- [ ] Cloudflare Zero Trust Access configured (optional but recommended — see [cloudflare.md](cloudflare.md)).
+- [ ] Cloudflare Zero Trust Access configured in front of n8n — see [cloudflare.md](cloudflare.md#optional-cloudflare-zero-trust-access). n8n's own login is the only gate otherwise placed between the internet and your workflows once the tunnel is up.
+- [ ] `N8N_USER_MANAGEMENT_DISABLED` is never set — that env var would remove n8n's login entirely on an instance reachable through the tunnel.
 - [ ] Docker Compose restart policy is `always` (already set in `docker-compose.yml`).
+- [ ] Pin `n8nio/n8n` and `n8nio/runners` image tags to a specific version instead of `latest` before treating this as a stable production deployment — `latest` auto-updates on every `docker compose pull` with no rollback point.
 
 ## Updating n8n
 
@@ -45,7 +49,7 @@ To have n8n start automatically when you log in:
 
 1. Open **System Settings → General → Login Items**.
 2. Add **Docker Desktop** so the daemon starts automatically.
-3. Create a Launch Agent to run `./scripts/start.sh` at login — or simply add it to a login item script.
+3. Create a Launch Agent to run `python3 scripts/launch.py start` at login — or simply add it to a login item script.
 
 Alternatively, use a launchd plist (requires the Docker daemon to be running first):
 
@@ -59,8 +63,9 @@ Alternatively, use a launchd plist (requires the Docker daemon to be running fir
     <string>com.n8n.local</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/bin/bash</string>
-        <string>/path/to/n8n-workflows/scripts/start.sh</string>
+        <string>/usr/bin/python3</string>
+        <string>/path/to/n8n-workflows/scripts/launch.py</string>
+        <string>start</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -77,7 +82,7 @@ Load it with: `launchctl load ~/Library/LaunchAgents/com.n8n.local.plist`
 ## Starting on Boot (Windows)
 
 1. Press `Win + R`, type `shell:startup`, press Enter.
-2. Create a shortcut to `scripts\start.bat` in that folder.
+2. Create a shortcut with target `python C:\path\to\n8n-workflows\scripts\launch.py start` (adjust the path) in that folder.
 
 ## Migrating to a VPS / Cloud
 
