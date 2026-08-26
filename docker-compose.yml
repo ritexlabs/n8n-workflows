@@ -38,8 +38,15 @@ services:
       - N8N_SMTP_USER=${N8N_SMTP_USER:-}
       - N8N_SMTP_PASS=${N8N_SMTP_PASS:-}
       - N8N_SMTP_SENDER=${N8N_SMTP_SENDER:-}
+      # Explicitly allow reading and writing in the /files mounted container folder
+      - N8N_RESTRICT_FILE_ACCESS_TO=/files
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
     volumes:
       - ${N8N_DATA_PATH:-./n8n_data}:/home/node/.n8n
+      # Nested under N8N_DATA_PATH so there's still one top-level directory to back
+      # up, but /files stays a distinct mount from /home/node/.n8n inside the
+      # container — workflow file I/O can't touch database.sqlite/encryption.key.
+      - ${N8N_DATA_PATH:-./n8n_data}/files:/files
 
   runners:
     image: n8nio/runners:latest

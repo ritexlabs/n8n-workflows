@@ -26,7 +26,8 @@ secrets/
 *credentials*.json
 client_secret*.json
 
-# n8n data (workflows, credentials, execution history — back this up separately)
+# n8n data (workflows, credentials, execution history — back this up separately).
+# Also covers n8n_data/files/, the sandboxed /files mount for file-system nodes.
 n8n_data/
 
 # Cloudflare Tunnel credentials (stored per-user; never commit)

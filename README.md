@@ -80,7 +80,7 @@ All settings are in `.env` (copy from `.env.sample`):
 | `WEBHOOK_URL` | No | Full public URL for webhook callbacks (same as `https://N8N_HOST/`). |
 | `N8N_EDITOR_BASE_URL` | No | Same as `WEBHOOK_URL`. |
 | `GENERIC_TIMEZONE` | No | Your timezone (e.g. `Asia/Kolkata`). |
-| `N8N_DATA_PATH` | No | Where n8n data is stored. Default: `./n8n_data`. |
+| `N8N_DATA_PATH` | No | Where n8n data is stored. Default: `./n8n_data`. n8n's file-read/write nodes are separately sandboxed to `<this>/files` — they can't touch `database.sqlite` or `encryption.key` even though it's nested under the same folder. |
 | `N8N_SMTP_HOST` | No | SMTP server for "forgot password" / invite emails. Leave empty to disable — no error, just no email. |
 | `N8N_SMTP_USER` / `N8N_SMTP_PASS` / `N8N_SMTP_SENDER` | No | SMTP credentials. For Gmail, `N8N_SMTP_PASS` must be an [App Password](https://myaccount.google.com/apppasswords), not your account password. |
 | `CLOUDFLARE_HOSTNAME` | No | Your subdomain. Leave empty for random URL mode. |

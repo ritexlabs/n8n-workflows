@@ -77,4 +77,14 @@ This directory contains:
 - `encryption.key` — encryption key for stored credentials (back this up!)
 - `config` — n8n settings
 
+## Sandboxed File I/O
+
+Read/Write File nodes (and similar file-system nodes) are restricted to `/files`
+inside the container via `N8N_RESTRICT_FILE_ACCESS_TO=/files` — they cannot read
+or write anywhere else on the container filesystem, including `/home/node/.n8n`
+(`database.sqlite`, `encryption.key`). The host path is `<N8N_DATA_PATH>/files`
+(default: `./n8n_data/files`) — nested under the data directory so there's still
+one top-level folder to back up, while staying a distinct mount inside the
+container. Covered by the existing `n8n_data/` gitignore entry.
+
 **Back up `n8n_data/` regularly**, especially `encryption.key`. Without it, stored credentials cannot be decrypted.
