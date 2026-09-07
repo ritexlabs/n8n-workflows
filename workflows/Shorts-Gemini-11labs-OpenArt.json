@@ -8,8 +8,8 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -224,
-        608
+        -448,
+        736
       ]
     },
     {
@@ -30,9 +30,12 @@
       "type": "@elevenlabs/n8n-nodes-elevenlabs.elevenLabs",
       "typeVersion": 1,
       "position": [
-        224,
-        512
+        80,
+        640
       ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "credentials": {
         "elevenLabsApi": {
           "id": "aXax4H7KzOSPblHk",
@@ -51,8 +54,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
       "position": [
-        448,
-        512
+        304,
+        640
       ]
     },
     {
@@ -71,9 +74,9 @@
             "model": "byte-plus-seedance-2-5",
             "mode": "text2video",
             "params": {
-              "prompt": "={{ $json.scene }}",
+              "prompt": "={{ $('Loop Scenes').item.json.scene }}",
               "videoCount": 1,
-              "duration": 10,
+              "duration": "={{ $('Loop Scenes').item.json.clipDurationSec }}",
               "aspectRatio": "9:16",
               "resolution": "480p",
               "generateAudio": false,
@@ -130,9 +133,12 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1.1,
       "position": [
-        864,
-        656
+        752,
+        688
       ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "credentials": {
         "mcpOAuth2Api": {
           "id": "hciOYAZ76et8Wrdi",
@@ -149,8 +155,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        1088,
-        656
+        976,
+        688
       ],
       "webhookId": "4d50eeb4-5d9c-4e76-9eb9-b742a7dae728"
     },
@@ -189,9 +195,12 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClient",
       "typeVersion": 1.1,
       "position": [
-        1312,
-        656
+        1200,
+        688
       ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "credentials": {
         "mcpOAuth2Api": {
           "id": "hciOYAZ76et8Wrdi",
@@ -228,8 +237,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        1536,
-        656
+        1424,
+        688
       ]
     },
     {
@@ -248,14 +257,17 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1760,
-        656
-      ]
+        1648,
+        672
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
     },
     {
       "parameters": {
         "operation": "write",
-        "fileName": "=/files/video_clip_{{ $node['Split Scenes'].json.sceneIndex }}.mp4",
+        "fileName": "=/files/video_clip_{{ $('Loop Scenes').item.json.sceneIndex }}.mp4",
         "options": {}
       },
       "id": "b0c8f1d0-941e-4dbe-bd01-69d1827729e5",
@@ -263,21 +275,21 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1,
       "position": [
-        1984,
-        736
+        1872,
+        1056
       ]
     },
     {
       "parameters": {
-        "command": "ffmpeg -y -i /files/video_combined.mp4 -i /files/voiceover.mp3 -map 0:v:0 -map 1:a:0 -c:v libx264 -c:a aac -shortest /files/final_output.mp4"
+        "command": "=ffmpeg -y -i /files/video_combined.mp4 -i /files/voiceover.mp3 -map 0:v:0 -map 1:a:0 -c:v libx264 -c:a aac -shortest /files/final_output_run{{ $execution.id }}.mp4"
       },
       "id": "90997bf0-09f6-478a-be20-a4534b600ec7",
       "name": "Combine Video + Audio",
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        1120,
-        368
+        976,
+        496
       ]
     },
     {
@@ -297,7 +309,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"contents\": [{\"parts\": [{\"text\": \"You are a documentary writer. Select a verified topic under Wonders of World/Universe/Sea/India/Places. Write a 30-second script (~80 words). Write the \\\"script\\\" field in natural spoken Hindi (Devanagari), suitable for voiceover narration — keep \\\"topic\\\", \\\"openart_prompts\\\", and the \\\"youtube\\\" fields in English. Also write \\\"openart_prompts\\\": an array of exactly 3 distinct cinematic English visual descriptions, one per ~10-second video segment, together telling a coherent visual story that follows the script's narrative (different angles, moments, or details of the topic — not repeats of the same shot). Return ONLY a JSON object: {\\\"topic\\\": \\\"Topic Name\\\", \\\"script\\\": \\\"हिंदी में Voiceover text\\\", \\\"openart_prompts\\\": [\\\"scene 1 description\\\", \\\"...\\\", \\\"scene 3 description\\\"], \\\"youtube\\\": {\\\"title\\\": \\\"Title\\\", \\\"description\\\": \\\"Description #shorts\\\", \\\"tags\\\": [\\\"wonders\\\"]}}}}\"}]}],\n  \"generationConfig\": {\"responseMimeType\": \"application/json\"}\n}",
+        "jsonBody": "={\n  \"contents\": [{\"parts\": [{\"text\": \"You are a documentary writer. Select a verified topic under Wonders of World/Universe/Sea/India/Places. Write a {{ $json.videoDurationSec }}-second script (~{{ Math.max(10, Math.round($json.videoDurationSec * 2.67)) }} words). Write the \\\"script\\\" field in natural spoken Hindi (Devanagari), suitable for voiceover narration — keep \\\"topic\\\", \\\"openart_prompts\\\", and the \\\"youtube\\\" fields in English. Also write \\\"openart_prompts\\\": an array of exactly {{ $json.sceneCount }} distinct cinematic English visual descriptions, one per ~{{ $json.clipDurationSec }}-second video segment, together telling a coherent visual story that follows the script's narrative (different angles, moments, or details of the topic — not repeats of the same shot). For \\\"youtube\\\", write a short catchy \\\"title\\\" (under 60 chars, with an emoji), a \\\"description\\\" that briefly summarizes the video then ends with 5-6 relevant, currently popular/trending hashtags for this topic on YouTube Shorts (always include #shorts, plus topic-specific ones like #wondersofworld, #didyouknow, #factsdaily as fitting — no generic unrelated tags), and \\\"tags\\\": an array of 8-10 relevant search keywords (no # symbol). Return ONLY a JSON object: {\\\"topic\\\": \\\"Topic Name\\\", \\\"script\\\": \\\"हिंदी में Voiceover text\\\", \\\"openart_prompts\\\": [array of exactly {{ $json.sceneCount }} scene description strings], \\\"youtube\\\": {\\\"title\\\": \\\"Catchy Title\\\", \\\"description\\\": \\\"Summary... #shorts #example\\\", \\\"tags\\\": [\\\"keyword1\\\", \\\"keyword2\\\"]}}}}\"}]}],\n  \"generationConfig\": {\"responseMimeType\": \"application/json\"}\n}",
         "options": {}
       },
       "id": "0cf86767-eae5-4dfc-b70d-21ac5df13cdf",
@@ -305,9 +317,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        0,
-        608
+        -144,
+        736
       ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "credentials": {
         "googlePalmApi": {
           "id": "aprLxqbF5jUxabBq",
@@ -317,15 +332,15 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.candidates[0].content.parts[0].text;\nconst data = JSON.parse(raw);\nconst prompts = data.openart_prompts || [];\nreturn prompts.map((p, i) => ({\n  json: {\n    scene: p,\n    sceneIndex: i,\n    topic: data.topic,\n    script: data.script,\n    youtube: data.youtube,\n  },\n}));"
+        "jsCode": "const raw = $input.first().json.candidates[0].content.parts[0].text;\nconst data = JSON.parse(raw);\nconst prompts = data.openart_prompts || [];\nconst clipDurationSec = $node['Config'].json.clipDurationSec;\nreturn prompts.map((p, i) => ({\n  json: {\n    scene: p,\n    sceneIndex: i,\n    topic: data.topic,\n    script: data.script,\n    youtube: data.youtube,\n    clipDurationSec,\n  },\n}));"
       },
       "id": "b2f8f311-9213-4c70-aa25-35e45be55afe",
       "name": "Split Scenes",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        224,
-        704
+        80,
+        832
       ]
     },
     {
@@ -337,21 +352,21 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        448,
-        704
+        304,
+        832
       ]
     },
     {
       "parameters": {
-        "command": "rm -f /files/concat_list.txt; for i in $(seq 0 2); do echo \"file '/files/video_clip_$i.mp4'\" >> /files/concat_list.txt; done; cat /files/concat_list.txt"
+        "command": "=rm -f /files/concat_list.txt; for i in $(seq 0 {{ $node['Config'].json.sceneCount - 1 }}); do echo \"file '/files/video_clip_$i.mp4'\" >> /files/concat_list.txt; done; cat /files/concat_list.txt"
       },
       "id": "4981dd5c-29d6-4d9f-870e-6cd69ee3d496",
       "name": "Build Concat List",
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        672,
-        368
+        528,
+        496
       ]
     },
     {
@@ -363,8 +378,8 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        896,
-        368
+        752,
+        496
       ]
     },
     {
@@ -380,7 +395,7 @@
             {
               "id": "vp1",
               "leftValue": "={{ $node['Manual Trigger'].json.VIDEO_PROVIDER }}",
-              "rightValue": "openart",
+              "rightValue": "elevenlabs",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -396,8 +411,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        672,
-        800
+        528,
+        928
       ]
     },
     {
@@ -417,7 +432,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model_id\": \"bytedance-seedance-v2.5\",\n  \"prompt\": \"{{ $json.scene }}\",\n  \"aspect_ratio\": \"9:16\",\n  \"duration_secs\": 10,\n  \"resolution\": \"720p\",\n  \"generate_audio\": false\n}",
+        "jsonBody": "={\n  \"model_id\": \"bytedance-seedance-v2.5\",\n  \"prompt\": \"{{ $('Loop Scenes').item.json.scene }}\",\n  \"aspect_ratio\": \"9:16\",\n  \"duration_secs\": {{ $('Loop Scenes').item.json.clipDurationSec }},\n  \"resolution\": \"720p\",\n  \"generate_audio\": false\n}",
         "options": {}
       },
       "id": "27b70e0e-2e62-4085-9e57-c137aba8e1bc",
@@ -425,9 +440,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        912,
-        1008
+        752,
+        976
       ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "credentials": {
         "elevenLabsApi": {
           "id": "aXax4H7KzOSPblHk",
@@ -444,8 +462,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        1136,
-        1008
+        976,
+        976
       ],
       "webhookId": "0762f7d8-9b8a-438a-b2ae-8d1949542cd2"
     },
@@ -461,9 +479,12 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1360,
-        1008
+        1200,
+        912
       ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
       "credentials": {
         "elevenLabsApi": {
           "id": "aXax4H7KzOSPblHk",
@@ -500,8 +521,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        1584,
-        1008
+        1424,
+        976
       ]
     },
     {
@@ -520,8 +541,124 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1808,
-        1008
+        1648,
+        976
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "712254f8-d532-41cf-8a6e-8110851bdb2a",
+              "name": "savedClip",
+              "value": "=video_clip_{{ $('Loop Scenes').item.json.sceneIndex }}.mp4",
+              "type": "string"
+            },
+            {
+              "id": "a12b2f50-b7e4-4ba4-be61-8fb86d3a98ac",
+              "name": "sceneIndex",
+              "value": "={{ $('Loop Scenes').item.json.sceneIndex }}",
+              "type": "number"
+            },
+            {
+              "id": "c650bc96-8caa-4761-bc52-26f68040817f",
+              "name": "scene",
+              "value": "={{ $('Loop Scenes').item.json.scene }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a3b40a64-5643-439a-864e-409344239db2",
+      "name": "Track Saved Clip",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2048,
+        1056
+      ]
+    },
+    {
+      "parameters": {
+        "fileSelector": "=/files/final_output_run{{ $execution.id }}.mp4",
+        "options": {}
+      },
+      "id": "a70c66f7-cc89-4677-b146-adcf9a9b5758",
+      "name": "Read Final Video",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "operation": "upload",
+        "title": "={{ JSON.parse($node['Generate Script (Gemini)'].json.candidates[0].content.parts[0].text).youtube.title }} #Shorts",
+        "regionCode": "IN",
+        "categoryId": "27",
+        "options": {
+          "description": "={{ JSON.parse($node['Generate Script (Gemini)'].json.candidates[0].content.parts[0].text).youtube.description }}",
+          "privacyStatus": "private",
+          "selfDeclaredMadeForKids": false,
+          "tags": "={{ JSON.parse($node['Generate Script (Gemini)'].json.candidates[0].content.parts[0].text).youtube.tags.join(',') }}"
+        }
+      },
+      "id": "9a173e57-66ae-4905-83f6-36ee541dbc4c",
+      "name": "Upload to YouTube (Private)",
+      "type": "n8n-nodes-base.youTube",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        496
+      ],
+      "credentials": {
+        "youTubeOAuth2Api": {
+          "id": "x2FjG42nw66KnOvt",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cfg1",
+              "name": "videoDurationSec",
+              "value": "={{ $json.VIDEO_DURATION_SEC || 30 }}",
+              "type": "number"
+            },
+            {
+              "id": "cfg2",
+              "name": "clipDurationSec",
+              "value": "={{ Math.min(30, Math.max(4, $json.CLIP_DURATION_SEC || 10)) }}",
+              "type": "number"
+            },
+            {
+              "id": "cfg3",
+              "name": "sceneCount",
+              "value": "={{ Math.ceil(($json.VIDEO_DURATION_SEC || 30) / Math.min(30, Math.max(4, $json.CLIP_DURATION_SEC || 10))) }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cfg-node-0001-aaaa-bbbb-cccccccccccc",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        736
       ]
     }
   ],
@@ -531,7 +668,7 @@
       "main": [
         [
           {
-            "node": "Generate Script (Gemini)",
+            "node": "Config",
             "type": "main",
             "index": 0
           }
@@ -660,7 +797,7 @@
       "main": [
         [
           {
-            "node": "Loop Scenes",
+            "node": "Track Saved Clip",
             "type": "main",
             "index": 0
           }
@@ -693,14 +830,14 @@
       "main": [
         [
           {
-            "node": "Trigger OpenArt Video",
+            "node": "Trigger ElevenLabs Video",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Trigger ElevenLabs Video",
+            "node": "Trigger OpenArt Video",
             "type": "main",
             "index": 0
           }
@@ -768,6 +905,50 @@
           }
         ]
       ]
+    },
+    "Track Saved Clip": {
+      "main": [
+        [
+          {
+            "node": "Loop Scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Video + Audio": {
+      "main": [
+        [
+          {
+            "node": "Read Final Video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Final Video": {
+      "main": [
+        [
+          {
+            "node": "Upload to YouTube (Private)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Generate Script (Gemini)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -776,7 +957,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "147d25bf-c717-4bec-8bfe-27b34f892f8e",
+  "versionId": "2a9e81c2-29e5-4180-b0cf-97b6f1ef60d7",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "7a2c5bebf614e85bd940c0f2c59f3bfb8e6b508bddde029bf41d3d43f691a5ae"

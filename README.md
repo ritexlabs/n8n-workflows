@@ -126,6 +126,19 @@ Full details: [docs/cloudflare.md → Troubleshooting](docs/cloudflare.md#troubl
 
 ---
 
+## Workflows
+
+Ready-to-import workflow JSON files live in [`workflows/`](workflows/):
+
+| Workflow | Description |
+|---|---|
+| [Shorts – Gemini + ElevenLabs + OpenArt](workflows/Shorts-Gemini-11labs-OpenArt.md) | Writes a short documentary script (Gemini), narrates it in Hindi (ElevenLabs), generates matching video scenes (OpenArt or ElevenLabs Flows), merges with `ffmpeg`, and uploads to YouTube as a private Short. |
+| [`Shorts-Hygen-OpenAI.json`](workflows/Shorts-Hygen-OpenAI.json) | Shorts generation using HeyGen + OpenAI. |
+
+Importing a workflow (**Workflows → Import from File** in the n8n editor) never carries over real credentials — each JSON only stores a credential's internal `id`/`name` reference, never the secret itself. You'll need to create matching credentials in your own instance and re-attach them to the imported nodes; see each workflow's own doc page for exactly which ones are required.
+
+---
+
 ## Documentation
 
 - [Architecture](docs/architecture.md) — component diagram and data flow
