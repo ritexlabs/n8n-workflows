@@ -9,14 +9,14 @@ Fully automated pipeline that writes a short documentary script, narrates it in 
 ## What it does
 
 ```
-Manual Trigger
+Manual Trigger ──► Config ──► Load Topic History ──► Pick Topic (least-used category)
       │
       ▼
-Generate Script (Gemini) ──► picks a topic (Wonders of World/Universe/Sea/India/Places),
+Generate Script (Gemini) ──► picks a new topic in that category (avoiding covered ones),
       │                       writes an ~80-word Hindi voiceover script, 3 English scene
       │                       prompts, and a YouTube title/description/tags (with hashtags)
       │
-      ├──► ElevenLabs TTS ──► Save Voiceover to Disk (/files/voiceover.mp3)
+      ├──► ElevenLabs TTS ──► Save Voiceover to Disk (/files/run<id>_voiceover.mp3)
       │
       └──► Split Scenes ──► Loop Scenes (×3, one per scene)
                                 │
@@ -34,14 +34,15 @@ Generate Script (Gemini) ──► picks a topic (Wonders of World/Universe/Sea/
                               Read Final Video ──► Upload to YouTube (Private)
                                           │
                                           ▼
-                                Cleanup Local Files
+                     Record Topic ──► Cleanup Run Files
 ```
 
+- **Topic tracking**: every uploaded topic is appended to `/files/topics_covered.jsonl` (host: `n8n_data/files/topics_covered.jsonl`, one JSON line per video with `date`, `category`, `topic`, `youtubeId`). Each run picks the least-used of the 5 categories (Wonders of the World / Universe / Sea / India / Amazing Places), passes the covered topics to Gemini to avoid, and stops before any paid generation if Gemini still returns a covered topic. Delete a line to allow that topic again.
 - **Script + voice**: Google Gemini writes the script and metadata; ElevenLabs converts the script to Hindi speech.
 - **Video**: 3 scenes × 10s, generated in parallel with the loop via [OpenArt's MCP server](https://mcp.openart.ai/mcp) (default) or ElevenLabs' Flows video API — toggle with the `VIDEO_PROVIDER` input.
 - **Merge**: `ffmpeg` concatenates the 3 clips, then merges the result with the voiceover track (`-map` used explicitly so the right audio/video streams are picked).
 - **Upload**: uploads as a **private** YouTube Short — region `IN`, category `Education (27)`, and `#Shorts` is always appended to the title so YouTube classifies it correctly (the Data API has no explicit "this is a Short" flag; it infers it from format + that hashtag).
-- **Cleanup**: after a successful upload, the run's own intermediate files (`voiceover.mp3`, `video_clip_*.mp4`, `video_combined.mp4`, `concat_list.txt`, `final_output_run<id>.mp4`) are deleted so `/files` is ready for the next run. Cleanup only runs after a successful upload — a failed run leaves its files in place for inspection.
+- **Cleanup**: every intermediate file is prefixed with the execution id (`run<id>_voiceover.mp3`, `run<id>_clip_*.mp4`, `run<id>_combined.mp4`, `run<id>_concat.txt`), so a run can never reuse an earlier run's clips. After a successful upload they are deleted; the final `final_output_run<id>.mp4` is kept. A failed run leaves its files in place for inspection.
 
 ## Choosing the video provider
 
@@ -85,4 +86,4 @@ There is no dry-run mode — running the workflow (via the Manual Trigger, in th
 ## Output
 
 - A new **private** YouTube Short on the channel authorized in the YouTube credential, titled with an emoji + `#Shorts`, with an AI-written description and trending hashtags.
-- All local intermediate files are removed automatically after a successful upload.
+- A new line in `topics_covered.jsonl`; intermediate files are removed, `final_output_run<id>.mp4` is kept.

@@ -8,7 +8,7 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -448,
+        -1040,
         736
       ]
     },
@@ -46,7 +46,7 @@
     {
       "parameters": {
         "operation": "write",
-        "fileName": "/files/voiceover.mp3",
+        "fileName": "=/files/run{{ $execution.id }}_voiceover.mp3",
         "options": {}
       },
       "id": "323edae8-1153-409c-bcbb-9978c140cc6e",
@@ -267,7 +267,7 @@
     {
       "parameters": {
         "operation": "write",
-        "fileName": "=/files/video_clip_{{ $('Loop Scenes').item.json.sceneIndex }}.mp4",
+        "fileName": "=/files/run{{ $execution.id }}_clip_{{ $('Loop Scenes').item.json.sceneIndex }}.mp4",
         "options": {}
       },
       "id": "b0c8f1d0-941e-4dbe-bd01-69d1827729e5",
@@ -281,7 +281,7 @@
     },
     {
       "parameters": {
-        "command": "=ffmpeg -y -i /files/video_combined.mp4 -i /files/voiceover.mp3 -map 0:v:0 -map 1:a:0 -c:v libx264 -c:a aac -shortest /files/final_output_run{{ $execution.id }}.mp4"
+        "command": "=ffmpeg -y -i /files/run{{ $execution.id }}_combined.mp4 -i /files/run{{ $execution.id }}_voiceover.mp3 -map 0:v:0 -map 1:a:0 -c:v libx264 -c:a aac -shortest /files/final_output_run{{ $execution.id }}.mp4"
       },
       "id": "90997bf0-09f6-478a-be20-a4534b600ec7",
       "name": "Combine Video + Audio",
@@ -309,7 +309,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"contents\": [{\"parts\": [{\"text\": \"You are a documentary writer. Select a verified topic under Wonders of World/Universe/Sea/India/Places. Write a {{ $json.videoDurationSec }}-second script (~{{ Math.max(10, Math.round($json.videoDurationSec * 2.67)) }} words). Write the \\\"script\\\" field in natural spoken Hindi (Devanagari), suitable for voiceover narration — keep \\\"topic\\\", \\\"openart_prompts\\\", and the \\\"youtube\\\" fields in English. Also write \\\"openart_prompts\\\": an array of exactly {{ $json.sceneCount }} distinct cinematic English visual descriptions, one per ~{{ $json.clipDurationSec }}-second video segment, together telling a coherent visual story that follows the script's narrative (different angles, moments, or details of the topic — not repeats of the same shot). For \\\"youtube\\\", write a short catchy \\\"title\\\" (under 60 chars, with an emoji), a \\\"description\\\" that briefly summarizes the video then ends with 5-6 relevant, currently popular/trending hashtags for this topic on YouTube Shorts (always include #shorts, plus topic-specific ones like #wondersofworld, #didyouknow, #factsdaily as fitting — no generic unrelated tags), and \\\"tags\\\": an array of 8-10 relevant search keywords (no # symbol). Return ONLY a JSON object: {\\\"topic\\\": \\\"Topic Name\\\", \\\"script\\\": \\\"हिंदी में Voiceover text\\\", \\\"openart_prompts\\\": [array of exactly {{ $json.sceneCount }} scene description strings], \\\"youtube\\\": {\\\"title\\\": \\\"Catchy Title\\\", \\\"description\\\": \\\"Summary... #shorts #example\\\", \\\"tags\\\": [\\\"keyword1\\\", \\\"keyword2\\\"]}}}}\"}]}],\n  \"generationConfig\": {\"responseMimeType\": \"application/json\"}\n}",
+        "jsonBody": "={\n  \"contents\": [{\"parts\": [{\"text\": \"You are a documentary writer. Select a verified, specific topic from the category: {{ $json.category }}. It must be a different subject from every one of these already-covered topics (including the same subject under another name): {{ JSON.stringify($json.coveredTopics.slice(-150).join('; ') || 'none').slice(1, -1) }}. Write a {{ $json.videoDurationSec }}-second script (~{{ Math.max(10, Math.round($json.videoDurationSec * 2.67)) }} words). Write the \\\"script\\\" field in natural spoken Hindi (Devanagari), suitable for voiceover narration — keep \\\"topic\\\", \\\"openart_prompts\\\", and the \\\"youtube\\\" fields in English. Also write \\\"openart_prompts\\\": an array of exactly {{ $json.sceneCount }} distinct cinematic English visual descriptions, one per ~{{ $json.clipDurationSec }}-second video segment, together telling a coherent visual story that follows the script's narrative (different angles, moments, or details of the topic — not repeats of the same shot). For \\\"youtube\\\", write a short catchy \\\"title\\\" (under 60 chars, with an emoji), a \\\"description\\\" that briefly summarizes the video then ends with 5-6 relevant, currently popular/trending hashtags for this topic on YouTube Shorts (always include #shorts, plus topic-specific ones like #wondersofworld, #didyouknow, #factsdaily as fitting — no generic unrelated tags), and \\\"tags\\\": an array of 8-10 relevant search keywords (no # symbol). Return ONLY a JSON object: {\\\"topic\\\": \\\"Topic Name\\\", \\\"script\\\": \\\"हिंदी में Voiceover text\\\", \\\"openart_prompts\\\": [array of exactly {{ $json.sceneCount }} scene description strings], \\\"youtube\\\": {\\\"title\\\": \\\"Catchy Title\\\", \\\"description\\\": \\\"Summary... #shorts #example\\\", \\\"tags\\\": [\\\"keyword1\\\", \\\"keyword2\\\"]}}}}\"}]}],\n  \"generationConfig\": {\"responseMimeType\": \"application/json\"}\n}",
         "options": {}
       },
       "id": "0cf86767-eae5-4dfc-b70d-21ac5df13cdf",
@@ -332,7 +332,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json.candidates[0].content.parts[0].text;\nconst data = JSON.parse(raw);\nconst prompts = data.openart_prompts || [];\nconst clipDurationSec = $node['Config'].json.clipDurationSec;\nreturn prompts.map((p, i) => ({\n  json: {\n    scene: p,\n    sceneIndex: i,\n    topic: data.topic,\n    script: data.script,\n    youtube: data.youtube,\n    clipDurationSec,\n  },\n}));"
+        "jsCode": "const raw = $input.first().json.candidates[0].content.parts[0].text;\nconst data = JSON.parse(raw);\nconst { category, coveredTopics } = $('Pick Topic').first().json;\nconst norm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();\n// Fail before any paid video/TTS generation runs.\nif (coveredTopics.some((t) => norm(t) === norm(data.topic))) {\n  throw new Error(`Gemini returned an already-covered topic: \"${data.topic}\". Re-run the workflow.`);\n}\nconst prompts = data.openart_prompts || [];\nconst clipDurationSec = $node['Config'].json.clipDurationSec;\nreturn prompts.map((p, i) => ({\n  json: {\n    scene: p,\n    sceneIndex: i,\n    topic: data.topic,\n    category,\n    script: data.script,\n    youtube: data.youtube,\n    clipDurationSec,\n  },\n}));"
       },
       "id": "b2f8f311-9213-4c70-aa25-35e45be55afe",
       "name": "Split Scenes",
@@ -358,7 +358,7 @@
     },
     {
       "parameters": {
-        "command": "=rm -f /files/concat_list.txt; for i in $(seq 0 {{ $node['Config'].json.sceneCount - 1 }}); do echo \"file '/files/video_clip_$i.mp4'\" >> /files/concat_list.txt; done; cat /files/concat_list.txt"
+        "command": "=rm -f /files/run{{ $execution.id }}_concat.txt; for i in $(seq 0 {{ $node['Config'].json.sceneCount - 1 }}); do echo \"file '/files/run{{ $execution.id }}_clip_$i.mp4'\" >> /files/run{{ $execution.id }}_concat.txt; done; cat /files/run{{ $execution.id }}_concat.txt"
       },
       "id": "4981dd5c-29d6-4d9f-870e-6cd69ee3d496",
       "name": "Build Concat List",
@@ -371,7 +371,7 @@
     },
     {
       "parameters": {
-        "command": "ffmpeg -y -f concat -safe 0 -i /files/concat_list.txt -c copy /files/video_combined.mp4"
+        "command": "=ffmpeg -y -f concat -safe 0 -i /files/run{{ $execution.id }}_concat.txt -c copy /files/run{{ $execution.id }}_combined.mp4"
       },
       "id": "0fd98ae7-af9b-4621-b92b-94eda2df2022",
       "name": "Concat Videos",
@@ -555,7 +555,7 @@
             {
               "id": "712254f8-d532-41cf-8a6e-8110851bdb2a",
               "name": "savedClip",
-              "value": "=video_clip_{{ $('Loop Scenes').item.json.sceneIndex }}.mp4",
+              "value": "=run{{ $execution.id }}_clip_{{ $('Loop Scenes').item.json.sceneIndex }}.mp4",
               "type": "string"
             },
             {
@@ -657,8 +657,60 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -288,
+        -816,
         736
+      ]
+    },
+    {
+      "parameters": {
+        "command": "touch /files/topics_covered.jsonl && cat /files/topics_covered.jsonl"
+      },
+      "id": "803165be-76a1-4f3d-816d-e8ea45debb5e",
+      "name": "Load Topic History",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst categories = ['Wonders of the World', 'Wonders of the Universe', 'Wonders of the Sea', 'Wonders of India', 'Amazing Places'];\nconst history = ($input.first().json.stdout || '')\n  .split('\\n')\n  .filter(Boolean)\n  .map((line) => { try { return JSON.parse(line); } catch { return null; } })\n  .filter(Boolean);\nconst counts = Object.fromEntries(categories.map((c) => [c, 0]));\nfor (const h of history) if (h.category in counts) counts[h.category]++;\n// Rotate to the least-used category ourselves; left to choose, Gemini keeps defaulting to ocean topics.\nconst min = Math.min(...Object.values(counts));\nconst pool = categories.filter((c) => counts[c] === min);\nconst category = pool[Math.floor(Math.random() * pool.length)];\nreturn [{ json: { ...cfg, category, coveredTopics: history.map((h) => h.topic) } }];"
+      },
+      "id": "01d73340-5d26-4bee-aafe-4949bac8bb92",
+      "name": "Pick Topic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        736
+      ]
+    },
+    {
+      "parameters": {
+        "command": "=echo '{{ (JSON.stringify({ date: $now.toISO(), category: $('Pick Topic').first().json.category, topic: $('Split Scenes').first().json.topic, youtubeId: $json.uploadId || $json.id || null }) + '\\n').base64Encode() }}' | base64 -d >> /files/topics_covered.jsonl"
+      },
+      "id": "05766645-35e4-478d-964b-bb1c36f87388",
+      "name": "Record Topic",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1648,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "command": "=rm -f /files/run{{ $execution.id }}_*"
+      },
+      "id": "b4e09def-4efc-459c-9250-6e5e548cde9e",
+      "name": "Cleanup Run Files",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        496
       ]
     }
   ],
@@ -943,7 +995,51 @@
       "main": [
         [
           {
+            "node": "Load Topic History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Topic History": {
+      "main": [
+        [
+          {
+            "node": "Pick Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Topic": {
+      "main": [
+        [
+          {
             "node": "Generate Script (Gemini)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to YouTube (Private)": {
+      "main": [
+        [
+          {
+            "node": "Record Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Topic": {
+      "main": [
+        [
+          {
+            "node": "Cleanup Run Files",
             "type": "main",
             "index": 0
           }
